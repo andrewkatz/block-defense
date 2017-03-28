@@ -1,0 +1,35 @@
+html {
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+}
+
+body {
+  align-items: center;
+  background: #000;
+  display: flex;
+  height: inherit;
+  justify-content: center;
+  margin: 0px;
+  width: inherit;
+}
+
+.hiddenText {
+  font-family: 'Press Start 2P';
+  visibility: hidden;
+}
+
+.version {
+  bottom: 10px;
+  color: #555;
+  font-family: 'Press Start 2P';
+  font-size: 6px;
+  left: 10px;
+  letter-spacing: 1px;
+  position: absolute;
+}
+
+canvas {
+  border-radius: 10px;
+}
