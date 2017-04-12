@@ -16,15 +16,16 @@ body {
 }
 
 .hiddenText {
-  font-family: 'Press Start 2P';
+  font-family: 'Rajdhani';
   visibility: hidden;
 }
 
 .version {
-  bottom: 10px;
+  bottom: 0;
   color: #555;
-  font-family: 'Press Start 2P';
-  font-size: 6px;
+  font-family: 'Rajdhani';
+  font-size: 14px;
+  font-weight: bold;
   left: 10px;
   letter-spacing: 1px;
   position: absolute;

@@ -2991,6 +2991,10 @@ performance-now@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/performance-now/-/performance-now-0.2.0.tgz#33ef30c5c77d4ea21c5a53869d91b56d8f2555e5"
 
+phaser-plugin-isometric:
+  version "0.9.2"
+  resolved "https://registry.yarnpkg.com/phaser-plugin-isometric/-/phaser-plugin-isometric-0.9.2.tgz#423b78cd8ef74f2c881f9342db0396bc805fd404"
+
 phaser@^2.6.2:
   version "2.6.2"
   resolved "https://registry.yarnpkg.com/phaser/-/phaser-2.6.2.tgz#eb39121725a2149c49f46b5d144318c22bc09249"

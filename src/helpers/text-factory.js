@@ -2,7 +2,7 @@ import { COLOR } from 'helpers/color';
 
 class TextFactory {
   static build(game, options) {
-    const font = 'Press Start 2P';
+    const font = 'Rajdhani';
     let color = COLOR.white;
     let size = 20;
 

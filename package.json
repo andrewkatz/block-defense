@@ -1,5 +1,5 @@
 {
-  "name": "santa",
+  "name": "tower-defense",
   "version": "1.0.0",
   "author": "Andrew Katz <andrewkatz00@gmail.com>",
   "license": "MIT",
@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "easystarjs": "^0.3.1",
-    "phaser": "^2.6.2"
+    "phaser": "^2.6.2",
+    "phaser-plugin-isometric": "^0.9.2"
   }
 }

@@ -1,10 +1,11 @@
 import BootState from 'states/boot-state';
 import LoadState from 'states/load-state';
 import PlayState from 'states/play-state';
+import 'vendor/phaser-plugin-isometric';
 
 class Game extends Phaser.Game {
   constructor() {
-    super(768, 768, Phaser.AUTO, 'content', null);
+    super(1024, 768, Phaser.AUTO, 'content', null, true, false);
 
     this.state.add('boot', BootState, false);
     this.state.add('load', LoadState, false);
