@@ -71,9 +71,9 @@ class BlockButton {
   }
 
   _onTapButton() {
+    this.onTap();
     this.selected = !this.selected;
     this._updateFrames();
-    this.onTap();
   }
 
   _updateFrames() {

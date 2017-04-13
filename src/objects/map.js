@@ -1,10 +1,10 @@
 import EasyStar from 'easystarjs';
 
-const BLOCK_WIDTH = 64;
+export const BLOCK_SCALE = 0.5;
+export const BLOCK_WIDTH = 64;
 const COLLAPSE_DELAY = 1500;
 const COLLAPSE_SPEED = 1000;
 const COLLAPSE_Z = -500;
-const SCALE = 0.5;
 
 const BLOCKS = [
   'block-gray',
@@ -33,8 +33,8 @@ class Map {
   }
 
   worldPosition(x, y) {
-    const xPos = this.offset.x + (x * BLOCK_WIDTH * SCALE);
-    const yPos = this.offset.y + (y * BLOCK_WIDTH * SCALE);
+    const xPos = this.offset.x + (x * BLOCK_WIDTH * BLOCK_SCALE);
+    const yPos = this.offset.y + (y * BLOCK_WIDTH * BLOCK_SCALE);
     return { x: xPos, y: yPos, z: this.offset.z };
   }
 
@@ -53,9 +53,9 @@ class Map {
       for (let y = 0; y < this.level.tiles[x].length; y++) {
         const sprite = this.sprites[x][y];
         const withinX = sprite.isoX <= cursorPos.x &&
-          sprite.isoX + BLOCK_WIDTH * SCALE >= cursorPos.x;
+          sprite.isoX + BLOCK_WIDTH * BLOCK_SCALE >= cursorPos.x;
         const withinY = sprite.isoY <= cursorPos.y &&
-          sprite.isoY + BLOCK_WIDTH * SCALE >= cursorPos.y;
+          sprite.isoY + BLOCK_WIDTH * BLOCK_SCALE >= cursorPos.y;
 
         if (withinX && withinY) {
           sprite.alpha = 0.5;
@@ -114,7 +114,7 @@ class Map {
           0,
           this.floorGroup
         );
-        sprite.scale.setTo(SCALE);
+        sprite.scale.setTo(BLOCK_SCALE);
         sprite.anchor.setTo(0.5, 0);
         this.sprites[x][y] = sprite;
       }

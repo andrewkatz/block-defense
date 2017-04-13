@@ -4,9 +4,8 @@ import Creep, { CREEP_TYPE } from 'objects/creep';
 import Map from 'objects/map';
 import LEVEL from 'maps/level-01';
 import TextFactory from 'helpers/text-factory';
-import Tower from 'objects/tower';
+import Tower, { TOWER_TYPE } from 'objects/tower';
 
-const BULLET_SPEED = 300;
 const CREEP_SPAWN_DELAY = 700;
 const INITIAL_CREDITS = 30;
 const NUM_BULLETS = 400;
@@ -72,7 +71,9 @@ class PlayState extends Phaser.State {
       icon: 'block-brown',
       cost: 10,
       onTap: () => {
-        this.selectionMode = !this.selectionMode;
+        this._deselectButtons();
+        this.selectionMode = true;
+        this.towerType = TOWER_TYPE.brown;
       }
     });
     const button2 = new BlockButton(this.game, {
@@ -81,7 +82,9 @@ class PlayState extends Phaser.State {
       icon: 'block-blue',
       cost: 30,
       onTap: () => {
-        this.selectionMode = !this.selectionMode;
+        this._deselectButtons();
+        this.selectionMode = true;
+        this.towerType = TOWER_TYPE.blue;
       }
     });
 
@@ -159,14 +162,18 @@ class PlayState extends Phaser.State {
     }
 
     this.selectionMode = false;
-    this.buttons.forEach(button => button.deselect());
+    this._deselectButtons();
     this.map.clearTileSelection();
 
-    const tower = new Tower(this.game, this.surfaceLayerGroup);
+    const tower = new Tower(this.game, this.surfaceLayerGroup, this.towerType);
     tower.setPosition(this.map.worldPosition(this.selectedPos.x, this.selectedPos.y));
     this.towers.push(tower);
 
-    this._changeCredits(-30);
+    this._changeCredits(-tower.getCost());
+  }
+
+  _deselectButtons() {
+    this.buttons.forEach(button => button.deselect());
   }
 
   update() {
@@ -197,7 +204,8 @@ class PlayState extends Phaser.State {
   }
 
   _damageCreep(creep, bullet) {
-    creep.damage(1);
+    creep.damage(bullet.tower.getDamage());
+
     if (!creep.alive) {
       this._changeCredits(bullet.creepTarget.getCreditValue());
     }
@@ -267,8 +275,8 @@ class PlayState extends Phaser.State {
     bullet.isoX = tower.sprite.isoX - 20;
     bullet.isoY = tower.sprite.isoY - 20;
     bullet.isoZ = creepTarget.sprite.isoZ;
-    bullet.body.angularVelocity = 100;
     bullet.creepTarget = creepTarget;
+    tower.configureBullet(bullet);
   }
 
   _updateMovingBullets() {
@@ -284,7 +292,7 @@ class PlayState extends Phaser.State {
         }
       }
 
-      this._moveToObject(bullet, bullet.creepTarget.sprite, BULLET_SPEED);
+      this._moveToObject(bullet, bullet.creepTarget.sprite, bullet.speed);
     });
   }
 
