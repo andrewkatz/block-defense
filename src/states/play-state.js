@@ -36,14 +36,58 @@ class PlayState extends Phaser.State {
     this.cursorPos = new Phaser.Plugin.Isometric.Point3();
 
     this._addBulletGroup();
-    this._addBottomPanel();
     this._addTopPanel();
+    this._addBottomPanel();
 
     this.game.input.onTap.add(this._onTap, this);
   }
 
-  _collapseMap() {
-    this.map.collapse();
+  update() {
+    this.game.iso.simpleSort(this.surfaceLayerGroup);
+    this.game.iso.unproject(this.game.input.activePointer.position, this.cursorPos);
+    this.selectedPos = this.map.getSelectedPos(this.selectionMode, this.cursorPos);
+
+    this.game.physics.isoArcade.overlap(
+      this.surfaceLayerGroup,
+      this.bulletGroup,
+      this._damageCreep,
+      this._shouldDamageCreep,
+      this
+    );
+
+    this.towers.forEach(tower => this._shoot(tower));
+    this._updateMovingBullets();
+
+    this._spawnNextWave();
+  }
+
+  render() {
+    this.game.debug.text(this.game.time.fps || '--', 12, 20, '#a7aebe');
+
+    // this.bulletGroup.forEach(bullet => this.game.debug.body(bullet, null, true, true));
+    // this.surfaceLayerGroup.forEach(creep => this.game.debug.body(creep, null, true, true));
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  //                                           HUD
+  // -----------------------------------------------------------------------------------------------
+
+  _addTopPanel() {
+    const panelBackground = this.game.add.sprite(0, 72, 'gradient');
+    panelBackground.scale.setTo(1, -1);
+    this._addWaveLabel();
+  }
+
+  _addWaveLabel() {
+    this.wave = 0;
+    this.waveLabel = TextFactory.build(this.game, {
+      x: this.game.world.centerX,
+      y: 12,
+      text: `WAVE ${this.wave}`,
+      color: COLOR.white
+    });
+    this.waveLabel.anchor.setTo(0.5, 0);
+    this.waveLabel.alpha = 0;
   }
 
   _addBottomPanel() {
@@ -62,6 +106,21 @@ class PlayState extends Phaser.State {
     });
     this.creditsLabel.anchor.setTo(1, 1);
     this._changeCredits(INITIAL_CREDITS);
+  }
+
+  _changeCredits(credits) {
+    this.credits += credits;
+    this.creditsLabel.text = `${this.credits}`;
+
+    this.buttons.forEach((button) => {
+      if (!button.isEnabled() && this.credits >= button.cost) {
+        button.enable();
+      }
+
+      if (button.isEnabled && this.credits < button.cost) {
+        button.disable();
+      }
+    });
   }
 
   _addButtons() {
@@ -94,34 +153,29 @@ class PlayState extends Phaser.State {
     ];
   }
 
-  _addBulletGroup() {
-    this.bulletGroup = this.game.add.group();
-
-    for (let i = 0; i < NUM_BULLETS; i++) {
-      const bullet = this.game.add.isoSprite(0, 0, 0, 'pixel', 0, this.bulletGroup);
-      bullet.anchor.setTo(0.5);
-      this.game.physics.isoArcade.enable(bullet);
-      bullet.kill();
+  _onTap() {
+    if (!this.selectionMode || !this.selectedPos) {
+      return;
     }
+
+    this.selectionMode = false;
+    this._deselectButtons();
+    this.map.clearTileSelection();
+
+    const tower = new Tower(this.game, this.surfaceLayerGroup, this.towerType);
+    tower.setPosition(this.map.worldPosition(this.selectedPos.x, this.selectedPos.y));
+    this.towers.push(tower);
+
+    this._changeCredits(-tower.getCost());
   }
 
-  _addTopPanel() {
-    const panelBackground = this.game.add.sprite(0, 72, 'gradient');
-    panelBackground.scale.setTo(1, -1);
-    this._addWaveLabel();
+  _deselectButtons() {
+    this.buttons.forEach(button => button.deselect());
   }
 
-  _addWaveLabel() {
-    this.wave = 0;
-    this.waveLabel = TextFactory.build(this.game, {
-      x: this.game.world.centerX,
-      y: 12,
-      text: `WAVE ${this.wave}`,
-      color: COLOR.white
-    });
-    this.waveLabel.anchor.setTo(0.5, 0);
-    this.waveLabel.alpha = 0;
-  }
+  // -----------------------------------------------------------------------------------------------
+  //                                     CREEP SPAWNING
+  // -----------------------------------------------------------------------------------------------
 
   _nextWave() {
     this.creeps = [];
@@ -156,42 +210,7 @@ class PlayState extends Phaser.State {
     this.spawningWave = false;
   }
 
-  _onTap() {
-    if (!this.selectionMode || !this.selectedPos) {
-      return;
-    }
-
-    this.selectionMode = false;
-    this._deselectButtons();
-    this.map.clearTileSelection();
-
-    const tower = new Tower(this.game, this.surfaceLayerGroup, this.towerType);
-    tower.setPosition(this.map.worldPosition(this.selectedPos.x, this.selectedPos.y));
-    this.towers.push(tower);
-
-    this._changeCredits(-tower.getCost());
-  }
-
-  _deselectButtons() {
-    this.buttons.forEach(button => button.deselect());
-  }
-
-  update() {
-    this.game.iso.simpleSort(this.surfaceLayerGroup);
-    this.game.iso.unproject(this.game.input.activePointer.position, this.cursorPos);
-    this.selectedPos = this.map.getSelectedPos(this.selectionMode, this.cursorPos);
-
-    this.game.physics.isoArcade.overlap(
-      this.surfaceLayerGroup,
-      this.bulletGroup,
-      this._damageCreep,
-      this._shouldDamageCreep,
-      this
-    );
-
-    this.towers.forEach(tower => this._shoot(tower));
-    this._updateMovingBullets();
-
+  _spawnNextWave() {
     if (this._getLivingCreep().length === 0 && !this.spawningWave) {
       this.spawningWave = true;
       this.game.add.tween(this.waveLabel).to({ alpha: 0 }, WAVE_DELAY).start();
@@ -203,6 +222,21 @@ class PlayState extends Phaser.State {
     return this.creeps.filter(creep => creep.alive());
   }
 
+  // -----------------------------------------------------------------------------------------------
+  //                                         BULLETS
+  // -----------------------------------------------------------------------------------------------
+
+  _addBulletGroup() {
+    this.bulletGroup = this.game.add.group();
+
+    for (let i = 0; i < NUM_BULLETS; i++) {
+      const bullet = this.game.add.isoSprite(0, 0, 0, 'pixel', 0, this.bulletGroup);
+      bullet.anchor.setTo(0.5);
+      this.game.physics.isoArcade.enable(bullet);
+      bullet.kill();
+    }
+  }
+
   _damageCreep(creep, bullet) {
     creep.damage(bullet.tower.getDamage());
 
@@ -211,21 +245,6 @@ class PlayState extends Phaser.State {
     }
 
     bullet.kill();
-  }
-
-  _changeCredits(credits) {
-    this.credits += credits;
-    this.creditsLabel.text = `${this.credits}`;
-
-    this.buttons.forEach((button) => {
-      if (!button.isEnabled() && this.credits >= button.cost) {
-        button.enable();
-      }
-
-      if (button.isEnabled && this.credits < button.cost) {
-        button.disable();
-      }
-    });
   }
 
   _shouldDamageCreep(creep, bullet) {
@@ -305,13 +324,6 @@ class PlayState extends Phaser.State {
 
     angle = Math.atan2(destination.isoZ - object.isoZ, destination.isoX - object.isoX);
     object.body.velocity.z = Math.sin(angle) * speed;
-  }
-
-  render() {
-    // this.game.debug.text(this.game.time.fps || '--', 2, 14, '#a7aebe');
-
-    // this.bulletGroup.forEach(bullet => this.game.debug.body(bullet, null, true, true));
-    // this.surfaceLayerGroup.forEach(creep => this.game.debug.body(creep, null, true, true));
   }
 }
 
