@@ -1,15 +1,15 @@
 import EasyStar from 'easystarjs';
 
+const BLOCKS = ['block-gray', 'block-stone'];
 export const BLOCK_SCALE = 0.5;
 export const BLOCK_WIDTH = 64;
 const COLLAPSE_DELAY = 1500;
 const COLLAPSE_SPEED = 1000;
 const COLLAPSE_Z = -500;
-
-const BLOCKS = [
-  'block-gray',
-  'block-stone'
-];
+const TILE_TYPE = {
+  ground: 0,
+  path: 1
+};
 
 class Map {
   constructor(options) {
@@ -57,8 +57,8 @@ class Map {
         const withinY = sprite.isoY <= cursorPos.y &&
           sprite.isoY + BLOCK_WIDTH * BLOCK_SCALE >= cursorPos.y;
 
-        if (withinX && withinY) {
-          sprite.alpha = 0.5;
+        if (withinX && withinY && this.level.tiles[x][y] === TILE_TYPE.ground) {
+          sprite.alpha = 0.8;
           selectedPos = { x: x, y: y };
         } else {
           sprite.alpha = 1;
@@ -124,7 +124,7 @@ class Map {
   _initPathfinder() {
     this.pathfinder = new EasyStar.js();
     this.pathfinder.setGrid(this.level.tiles);
-    this.pathfinder.setAcceptableTiles([1]);
+    this.pathfinder.setAcceptableTiles([TILE_TYPE.path]);
   }
 }
 

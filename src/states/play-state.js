@@ -2,9 +2,8 @@ import BlockButton from 'objects/block-button';
 import { COLOR } from 'helpers/color';
 import Creep, { CREEP_TYPE } from 'objects/creep';
 import Map from 'objects/map';
-import LEVEL from 'maps/level-01';
 import TextFactory from 'helpers/text-factory';
-import Tower, { TOWER_TYPE } from 'objects/tower';
+import Tower, { TOWER_PROPERTIES, TOWER_TYPE } from 'objects/tower';
 
 const CREEP_SPAWN_DELAY = 700;
 const INITIAL_CREDITS = 30;
@@ -14,25 +13,23 @@ const WAVE_DELAY = 2000;
 
 class PlayState extends Phaser.State {
   create() {
-    this.level = LEVEL;
-
     this.map = new Map({
       game: this.game,
-      level: this.level,
+      level: this.game.level,
       offset: { x: 0, y: 0, z: 0 }
     });
 
     this.surfaceLayerGroup = this.game.add.group();
     this.creeps = [];
     this.towers = [];
-
+    this.spawningWave = true;
     this.map.creepPath((path) => {
       this.path = path;
       this._nextWave();
     });
 
     this.selectionMode = false;
-    this.spawningWave = true;
+    this.cursorTower = null;
     this.cursorPos = new Phaser.Plugin.Isometric.Point3();
 
     this._addBulletGroup();
@@ -45,7 +42,8 @@ class PlayState extends Phaser.State {
   update() {
     this.game.iso.simpleSort(this.surfaceLayerGroup);
     this.game.iso.unproject(this.game.input.activePointer.position, this.cursorPos);
-    this.selectedPos = this.map.getSelectedPos(this.selectionMode, this.cursorPos);
+
+    this._updateSelectedPos();
 
     this.game.physics.isoArcade.overlap(
       this.surfaceLayerGroup,
@@ -62,7 +60,7 @@ class PlayState extends Phaser.State {
   }
 
   render() {
-    this.game.debug.text(this.game.time.fps || '--', 12, 20, '#a7aebe');
+    // this.game.debug.text(this.game.time.fps || '--', 12, 20, '#a7aebe');
 
     // this.bulletGroup.forEach(bullet => this.game.debug.body(bullet, null, true, true));
     // this.surfaceLayerGroup.forEach(creep => this.game.debug.body(creep, null, true, true));
@@ -75,16 +73,28 @@ class PlayState extends Phaser.State {
   _addTopPanel() {
     const panelBackground = this.game.add.sprite(0, 72, 'gradient');
     panelBackground.scale.setTo(1, -1);
+    this._addTitleLabel();
     this._addWaveLabel();
+  }
+
+  _addTitleLabel() {
+    this.titleLabel = TextFactory.build(this.game, {
+      x: this.game.world.centerX,
+      y: 12,
+      text: this.game.level.name,
+      color: COLOR.white
+    });
+    this.titleLabel.anchor.setTo(0.5, 0);
   }
 
   _addWaveLabel() {
     this.wave = 0;
     this.waveLabel = TextFactory.build(this.game, {
       x: this.game.world.centerX,
-      y: 12,
+      y: 38,
       text: `WAVE ${this.wave}`,
-      color: COLOR.white
+      color: COLOR.white,
+      size: 13
     });
     this.waveLabel.anchor.setTo(0.5, 0);
     this.waveLabel.alpha = 0;
@@ -153,6 +163,14 @@ class PlayState extends Phaser.State {
     ];
   }
 
+  _deselectButtons() {
+    this.buttons.forEach(button => button.deselect());
+  }
+
+  // -----------------------------------------------------------------------------------------------
+  //                                      TOWER PLACEMENT
+  // -----------------------------------------------------------------------------------------------
+
   _onTap() {
     if (!this.selectionMode || !this.selectedPos) {
       return;
@@ -169,8 +187,29 @@ class PlayState extends Phaser.State {
     this._changeCredits(-tower.getCost());
   }
 
-  _deselectButtons() {
-    this.buttons.forEach(button => button.deselect());
+  _updateSelectedPos() {
+    this.selectedPos = this.map.getSelectedPos(this.selectionMode, this.cursorPos);
+
+    if (this.selectedPos) {
+      const image = TOWER_PROPERTIES[this.towerType].image;
+
+      if (this.cursorTower) {
+        this.cursorTower.loadTexture(image);
+      } else {
+        this.cursorTower = this.game.add.isoSprite(0, 0, 0, image, 0, this.surfaceLayerGroup);
+      }
+
+      this.cursorTower.scale.setTo(0.4);
+      this.cursorTower.anchor.setTo(0.5, 0);
+      this.cursorTower.alpha = 0.9;
+
+      const worldPosition = this.map.worldPosition(this.selectedPos.x, this.selectedPos.y);
+      this.cursorTower.isoX = worldPosition.x;
+      this.cursorTower.isoY = worldPosition.y;
+      this.cursorTower.isoZ = worldPosition.z + 20;
+    } else if (this.cursorTower) {
+      this.cursorTower.alpha = 0;
+    }
   }
 
   // -----------------------------------------------------------------------------------------------

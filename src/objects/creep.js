@@ -58,13 +58,15 @@ class Creep {
   }
 
   move(path) {
-    if (path.length < 1) {
-      this.game.add.tween(this.sprite).to({ alpha: 0 }, 250).start();
-      this.game.time.events.add(250, this.die, this);
+    if (!this.alive()) {
       return;
     }
 
-    if (!this.alive()) {
+    if (path.length < 1) {
+      this.game.add.tween(this.sprite).to({ alpha: 0 }, 250).start();
+      this.game.time.events.add(250, this.die, this);
+      this.map.collapse();
+      this.game.time.events.add(1500, this.game.state.start, this.game.state, 'menu');
       return;
     }
 
@@ -83,7 +85,7 @@ class Creep {
   }
 
   getCreditValue() {
-    return CREDIT_VALUE * this.modifier;
+    return CREDIT_VALUE;
   }
 
   _frameName() {

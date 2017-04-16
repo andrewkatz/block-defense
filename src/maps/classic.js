@@ -1,5 +1,5 @@
 export default {
-  player: { x: 9, y: 3 },
+  name: 'CLASSIC',
   start: { x: 0, y: 5 },
   end: { x: 11, y: 5 },
   tiles: [
